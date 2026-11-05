@@ -2,3 +2,8 @@ __pycache__/
 *.pyc
 erp.db
 .env
+.claude/
+erp-frontend/
+output/
+__pycache__/
+.env
