@@ -1506,7 +1506,7 @@ def mark_attendance(
 
 @app.get("/attendance")
 def get_attendance(db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
-    if user["role"] not in ["admin", "teacher"]:
+    if user["role"] not in ["admin", "teacher", "staff"]:
         raise HTTPException(status_code=403, detail="Access denied")
     return {"attendance": db.query(AttendanceDB).all()}
 
