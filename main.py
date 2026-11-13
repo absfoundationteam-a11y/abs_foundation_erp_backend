@@ -1078,9 +1078,10 @@ def add_student(
     new_student.student_code = f"STU{new_student.id:04d}"
 
     if student.fees:
+        paid_at_admission = min(student.fees_paid or 0.0, student.fees)
         db.add(FeesDB(
             student_id=new_student.id,
-            amount=student.fees, paid=0.0,
+            amount=student.fees, paid=paid_at_admission,
             description="Initial Fees"
         ))
 
@@ -2154,9 +2155,6 @@ async def add_grade(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    percentage = (grade.marks / grade.total_marks) * 100
-    g = "A+" if percentage >= 90 else "A" if percentage >= 80 else "B" if percentage >= 70 else "C" if percentage >= 60 else "D" if percentage >= 50 else "F"
-
     # Parse DD-MM-YYYY → date object
     test_date_obj = None
     if grade.test_date:
@@ -2167,6 +2165,25 @@ async def add_grade(
                 test_date_obj = _date(int(parts[2]), int(parts[1]), int(parts[0]))
         except Exception:
             pass
+
+    if grade.is_absent:
+        new_grade = GradeDB(
+            student_id=grade.student_id,
+            subject=grade.subject,
+            marks=0,
+            total_marks=grade.total_marks or 0,
+            grade="—",
+            test_title=grade.test_title,
+            test_date=test_date_obj,
+            is_absent=True,
+        )
+        db.add(new_grade)
+        db.commit()
+        db.refresh(new_grade)
+        return {"message": "Absent record saved", "data": new_grade}
+
+    percentage = (grade.marks / grade.total_marks) * 100
+    g = "A+" if percentage >= 90 else "A" if percentage >= 80 else "B" if percentage >= 70 else "C" if percentage >= 60 else "D" if percentage >= 50 else "F"
 
     new_grade = GradeDB(
         student_id=grade.student_id,
@@ -2182,8 +2199,6 @@ async def add_grade(
     db.refresh(new_grade)
 
     # Send SMS to parent if marks template is configured
-    # Template: "Dear Parent, Your ward scored {#numeric#}/{#numeric#} in {#alphanumeric#} test on {#alphanumeric#}. Reply YES after receiving. -ABS Foundation"
-    # Variables: marks | total_marks | subject | date
     if student.parent_phone and DLT_MARKS_TEMPLATE_ID:
         sms_date = grade.test_date or datetime.now(IST).strftime("%d-%m-%Y")
         variables_values = f"{int(grade.marks)}|{int(grade.total_marks)}|{grade.subject}|{sms_date}"
