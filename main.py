@@ -1005,7 +1005,7 @@ def staff_dashboard_summary(
 @app.get("/fees/overdue")
 def get_overdue_fees(
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     today = date.today()
     overdue_fees = db.query(FeesDB).filter(
@@ -1162,7 +1162,7 @@ def get_students(db: Session = Depends(get_db), user: dict = Depends(get_current
 def search_students(
     q: str = "",
     db: Session = Depends(get_db),
-    user: dict = Depends(require_roles(["admin", "teacher"]))
+    user: dict = Depends(require_roles(["admin", "teacher", "staff"]))
 ):
     """Search students by name, student_code, email, or phone. Returns up to 20 matches."""
     q = q.strip()
@@ -1294,7 +1294,7 @@ def update_student(
 def bulk_update_course(
     data: BulkUpdateCourse,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     updated = 0
     for sid in data.student_ids:
@@ -1506,7 +1506,7 @@ def mark_attendance(
 
 @app.get("/attendance")
 def get_attendance(db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
-    if user["role"] not in ["admin", "teacher"]:
+    if user["role"] not in ["admin", "teacher", "staff"]:
         raise HTTPException(status_code=403, detail="Access denied")
     return {"attendance": db.query(AttendanceDB).all()}
 
@@ -1618,7 +1618,7 @@ async def mark_attendance_bulk(
 def add_fees(
     fees: FeesCreate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     if not db.query(StudentDB).filter(StudentDB.id == fees.student_id).first():
         raise HTTPException(status_code=404, detail="Student not found")
@@ -1675,7 +1675,7 @@ def pay_fees(
     fee_id: int,
     payment: FeesPayment,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     fee = db.query(FeesDB).filter(FeesDB.id == fee_id).first()
     if not fee:
@@ -1724,7 +1724,7 @@ def update_fee_record(
     fee_id: int,
     data: FeesUpdate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     fee = db.query(FeesDB).filter(FeesDB.id == fee_id).first()
     if not fee:
@@ -1751,7 +1751,7 @@ def update_fee_record(
 def delete_fee_record(
     fee_id: int,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     fee = db.query(FeesDB).filter(FeesDB.id == fee_id).first()
     if not fee:
@@ -1774,7 +1774,7 @@ def delete_fee_record(
 def add_teacher(
     teacher: TeacherCreate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     if db.query(TeacherDB).filter(TeacherDB.email == teacher.email).first():
         raise HTTPException(status_code=400, detail="Email already exists")
@@ -1836,7 +1836,7 @@ def update_teacher(
     teacher_id: int,
     updated: TeacherCreate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     teacher = db.query(TeacherDB).filter(TeacherDB.id == teacher_id).first()
     if not teacher:
@@ -1855,7 +1855,7 @@ def update_teacher(
 def delete_teacher(
     teacher_id: int,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     teacher = db.query(TeacherDB).filter(TeacherDB.id == teacher_id).first()
     if not teacher:
@@ -1877,7 +1877,7 @@ def delete_teacher(
 def create_teacher_login(
     data: TeacherUserCreate,
     db: Session = Depends(get_db),
-    current: dict = Depends(require_role("admin"))
+    current: dict = Depends(require_roles(["admin", "staff"]))
 ):
     teacher = db.query(TeacherDB).filter(TeacherDB.id == data.teacher_id).first()
     if not teacher:
@@ -1905,7 +1905,7 @@ def create_teacher_login(
 def get_teacher_credentials(
     teacher_id: int,
     db: Session = Depends(get_db),
-    current: dict = Depends(require_role("admin"))
+    current: dict = Depends(require_roles(["admin", "staff"]))
 ):
     user = db.query(UserDB).filter(UserDB.teacher_id == teacher_id).first()
     if not user:
@@ -1942,7 +1942,7 @@ def update_teacher_credentials(
     teacher_id: int,
     data: CredentialsUpdate,
     db: Session = Depends(get_db),
-    current: dict = Depends(require_role("admin"))
+    current: dict = Depends(require_roles(["admin", "staff"]))
 ):
     teacher = db.query(TeacherDB).filter(TeacherDB.id == teacher_id).first()
     if not teacher:
@@ -1980,7 +1980,7 @@ def update_teacher_credentials(
 def get_student_credentials(
     student_id: int,
     db: Session = Depends(get_db),
-    current: dict = Depends(require_role("admin"))
+    current: dict = Depends(require_roles(["admin", "staff"]))
 ):
     user = db.query(UserDB).filter(UserDB.student_id == student_id).first()
     if not user:
@@ -1994,7 +1994,7 @@ def update_student_credentials(
     student_id: int,
     data: CredentialsUpdate,
     db: Session = Depends(get_db),
-    current: dict = Depends(require_role("admin"))
+    current: dict = Depends(require_roles(["admin", "staff"]))
 ):
     student = db.query(StudentDB).filter(StudentDB.id == student_id).first()
     if not student:
@@ -2120,7 +2120,7 @@ def assign_subjects_to_teacher(
     teacher_id: int,
     data: TeacherSubjectsUpdate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     teacher = db.query(TeacherDB).filter(TeacherDB.id == teacher_id).first()
     if not teacher:
@@ -2227,7 +2227,7 @@ def delete_grade(
 def add_timetable(
     entry: TimetableCreate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     new_entry = TimetableDB(
         course_id=entry.course_id,
@@ -2294,7 +2294,7 @@ def get_timetable(db: Session = Depends(get_db), user: dict = Depends(get_curren
 def delete_timetable(
     entry_id: int,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     entry = db.query(TimetableDB).filter(TimetableDB.id == entry_id).first()
     if not entry:
@@ -2369,7 +2369,7 @@ def get_notices(db: Session = Depends(get_db), user: dict = Depends(get_current_
 def delete_notice(
     notice_id: int,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     notice = db.query(NoticeDB).filter(NoticeDB.id == notice_id).first()
     if not notice:
@@ -2393,7 +2393,7 @@ def mark_notice_read(notice_id: int, db: Session = Depends(get_db), user: dict =
 
 
 @app.get("/notices/{notice_id}/reads")
-def get_notice_reads(notice_id: int, db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
+def get_notice_reads(notice_id: int, db: Session = Depends(get_db), user: dict = Depends(require_roles(["admin", "staff"]))):
     reads = db.query(NoticeReadDB).filter(NoticeReadDB.notice_id == notice_id).all()
     user_ids = [r.user_id for r in reads]
     users = {u.id: u for u in db.query(UserDB).filter(UserDB.id.in_(user_ids)).all()}
@@ -2484,7 +2484,7 @@ def delete_course(
 def add_subject(
     subject: SubjectCreate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     course = db.query(CourseDB).filter(CourseDB.id == subject.course_id).first()
     if not course:
@@ -2543,7 +2543,7 @@ def update_subject(
     subject_id: int,
     updated: SubjectCreate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     subject = db.query(SubjectDB).filter(SubjectDB.id == subject_id).first()
     if not subject:
@@ -2559,7 +2559,7 @@ def update_subject(
 def delete_subject(
     subject_id: int,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     subject = db.query(SubjectDB).filter(SubjectDB.id == subject_id).first()
     if not subject:
@@ -2645,7 +2645,7 @@ def get_attendance_heatmap(
 def add_fees_bulk(
     data: BulkFeeCreate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     """Add a fee record to all students enrolled in a course."""
     # Find all students in the course (primary + additional)
@@ -2690,7 +2690,7 @@ def add_fees_bulk(
 # FEE TEMPLATES
 
 @app.get("/fee-templates")
-def get_fee_templates(db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
+def get_fee_templates(db: Session = Depends(get_db), user: dict = Depends(require_roles(["admin", "staff"]))):
     templates = db.query(FeeTemplateDB).all()
     result = []
     for t in templates:
@@ -2709,7 +2709,7 @@ def get_fee_templates(db: Session = Depends(get_db), user: dict = Depends(requir
 def create_fee_template(
     data: FeeTemplateCreate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     t = FeeTemplateDB(name=data.name, course_id=data.course_id, amount=data.amount, description=data.description)
     db.add(t)
@@ -2726,7 +2726,7 @@ def create_fee_template(
 def delete_fee_template(
     template_id: int,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     t = db.query(FeeTemplateDB).filter(FeeTemplateDB.id == template_id).first()
     if not t:
@@ -2771,7 +2771,7 @@ def get_exam_schedule(
 def create_exam(
     data: ExamScheduleCreate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     exam = ExamScheduleDB(
         course_id=data.course_id, title=data.title, subject=data.subject,
@@ -2794,7 +2794,7 @@ def update_exam(
     exam_id: int,
     data: ExamScheduleCreate,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     exam = db.query(ExamScheduleDB).filter(ExamScheduleDB.id == exam_id).first()
     if not exam:
@@ -2813,7 +2813,7 @@ def update_exam(
 def delete_exam(
     exam_id: int,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     exam = db.query(ExamScheduleDB).filter(ExamScheduleDB.id == exam_id).first()
     if not exam:
@@ -2834,7 +2834,7 @@ def delete_exam(
 def get_audit_logs(
     limit: int = 100,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     # Collect usernames of hidden/super-admin accounts so their logs are excluded
     hidden_usernames = {
@@ -3251,7 +3251,7 @@ async def inquiry_bulk_sms(
 # DATA EXPORT
 
 @app.get("/export/students")
-def export_students(db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
+def export_students(db: Session = Depends(get_db), user: dict = Depends(require_roles(["admin", "staff"]))):
     students = db.query(StudentDB).all()
     return {"students": [
         {"ID": s.id, "Student Code": s.student_code, "Name": s.name, "Father Name": s.father_name,
@@ -3264,7 +3264,7 @@ def export_students(db: Session = Depends(get_db), user: dict = Depends(require_
 
 
 @app.get("/export/fees")
-def export_fees(db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
+def export_fees(db: Session = Depends(get_db), user: dict = Depends(require_roles(["admin", "staff"]))):
     fees = db.query(FeesDB).all()
     student_ids = list({f.student_id for f in fees})
     students = {s.id: s for s in db.query(StudentDB).filter(StudentDB.id.in_(student_ids)).all()}
@@ -3280,7 +3280,7 @@ def export_fees(db: Session = Depends(get_db), user: dict = Depends(require_role
 
 
 @app.get("/export/attendance")
-def export_attendance(db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
+def export_attendance(db: Session = Depends(get_db), user: dict = Depends(require_roles(["admin", "staff"]))):
     records = db.query(AttendanceDB).order_by(AttendanceDB.date.desc()).limit(10000).all()
     student_ids = list({r.student_id for r in records})
     students = {s.id: s for s in db.query(StudentDB).filter(StudentDB.id.in_(student_ids)).all()}
@@ -3294,7 +3294,7 @@ def export_attendance(db: Session = Depends(get_db), user: dict = Depends(requir
 
 
 @app.get("/export/payments")
-def export_payments(db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
+def export_payments(db: Session = Depends(get_db), user: dict = Depends(require_roles(["admin", "staff"]))):
     payments = db.query(FeePaymentDB).order_by(FeePaymentDB.paid_date.desc()).all()
     fee_ids = list({p.fee_id for p in payments})
     fees = {f.id: f for f in db.query(FeesDB).filter(FeesDB.id.in_(fee_ids)).all()}
@@ -3347,7 +3347,7 @@ class BulkReportRequest(BaseModel):
 
 @app.post("/students/bulk-send-whatsapp-report")
 async def bulk_send_whatsapp_report(req: BulkReportRequest, db: Session = Depends(get_db),
-                                    user: dict = Depends(require_role("admin"))):
+                                    user: dict = Depends(require_roles(["admin", "staff"]))):
     students = db.query(StudentDB).filter(StudentDB.course == req.course).all()
     if not students:
         raise HTTPException(status_code=404, detail="No students found for this course")
@@ -3401,12 +3401,12 @@ def _task_dict(t: TaskDB) -> dict:
     }
 
 @app.get("/users/employees")
-def get_employees(db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
+def get_employees(db: Session = Depends(get_db), user: dict = Depends(require_roles(["admin", "staff"]))):
     employees = db.query(UserDB).filter(UserDB.role.in_(["staff", "teacher"]), UserDB.is_hidden != True).all()
     return {"employees": [{"id": e.id, "username": e.username, "role": e.role} for e in employees]}
 
 @app.post("/tasks")
-def create_task(data: TaskCreate, db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
+def create_task(data: TaskCreate, db: Session = Depends(get_db), user: dict = Depends(require_roles(["admin", "staff"]))):
     assignee = db.query(UserDB).filter(UserDB.id == data.assigned_to).first()
     if not assignee:
         raise HTTPException(status_code=404, detail="Assignee not found")
@@ -3432,7 +3432,7 @@ def get_all_tasks(
     priority: Optional[str] = None,
     assigned_to: Optional[int] = None,
     db: Session = Depends(get_db),
-    user: dict = Depends(require_role("admin"))
+    user: dict = Depends(require_roles(["admin", "staff"]))
 ):
     q = db.query(TaskDB)
     if status:      q = q.filter(TaskDB.status == status)
@@ -3451,7 +3451,7 @@ def get_my_tasks(db: Session = Depends(get_db), user: dict = Depends(require_rol
     return {"tasks": [_task_dict(t) for t in tasks]}
 
 @app.put("/tasks/{task_id}")
-def edit_task(task_id: int, data: TaskEdit, db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
+def edit_task(task_id: int, data: TaskEdit, db: Session = Depends(get_db), user: dict = Depends(require_roles(["admin", "staff"]))):
     task = db.query(TaskDB).filter(TaskDB.id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -3483,7 +3483,7 @@ def update_task_status(task_id: int, data: TaskStatusUpdate, db: Session = Depen
     return {"task": _task_dict(task)}
 
 @app.delete("/tasks/{task_id}")
-def delete_task(task_id: int, db: Session = Depends(get_db), user: dict = Depends(require_role("admin"))):
+def delete_task(task_id: int, db: Session = Depends(get_db), user: dict = Depends(require_roles(["admin", "staff"]))):
     task = db.query(TaskDB).filter(TaskDB.id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
