@@ -9,9 +9,13 @@ if not SQLALCHEMY_DATABASE_URL:
     SQLALCHEMY_DATABASE_URL = "postgresql://postgres:yourpassword@localhost:5432/erp_db"
     print("⚠️  WARNING: DATABASE_URL not set. Using local database.")
 
-# Render gives URLs starting with postgres:// but SQLAlchemy needs postgresql://
+# Normalize dialect to psycopg2 explicitly
+# - Render may give postgres:// (Heroku-style)
+# - Supabase gives postgresql:// which SQLAlchemy 2.x maps to psycopg3 (not installed)
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
-    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif SQLALCHEMY_DATABASE_URL.startswith("postgresql://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
